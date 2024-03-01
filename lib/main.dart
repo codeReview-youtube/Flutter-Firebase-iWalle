@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +12,7 @@ import 'package:iwalle/firebase_options.dart';
 import 'package:iwalle/home_screen.dart';
 import 'package:iwalle/login_screen.dart';
 
+const bool useEmulator = false;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -34,6 +36,12 @@ void main() async {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+  FirebaseFirestore.instance.settings =
+      const Settings(persistenceEnabled: true);
+
+  if (useEmulator) {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  }
 
   runApp(const MyApp());
 }
@@ -52,22 +60,30 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: StreamBuilder<User?>(
-        stream: authService.authStateChanges,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-          if (snapshot.data != null) {
-            return const MyHomePage(title: 'IWalle');
-          }
-          return const LoginScreen();
-        },
-      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => _buildHomeScreen(),
+        '/add': (context) => const AddScreen(),
+      },
+    );
+  }
+
+  Widget _buildHomeScreen() {
+    return StreamBuilder<User?>(
+      stream: authService.authStateChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (snapshot.data != null) {
+          return const MyHomePage(title: 'IWalle');
+        }
+        return const LoginScreen();
+      },
     );
   }
 }
