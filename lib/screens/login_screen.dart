@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iwalle/auth_service.dart';
+import 'package:iwalle/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,10 +60,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   // basic validation
                   if (_emailController.text.isNotEmpty &&
                       _passwordController.text.isNotEmpty) {
-                    await authService.signOrCreateUser(
+                    final user = await authService.signOrCreateUser(
                       email: _emailController.text,
                       password: _passwordController.text,
                     );
+                    if (user != null) {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
                   }
                 },
                 child: const Row(

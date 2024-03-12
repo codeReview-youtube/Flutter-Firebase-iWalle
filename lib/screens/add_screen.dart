@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:iwalle/auth_service.dart';
+import 'package:iwalle/services/auth_service.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
