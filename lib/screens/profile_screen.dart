@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:iwalle/services/auth_service.dart';
+import 'package:iwalle/services/firestore_service.dart';
+import 'package:iwalle/widgets/profile_picture.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,13 +15,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _toggleFields = false;
   bool _showCodeField = false;
   String _verificationId = '';
+  String _userId = '';
+  String _name = '';
+  String _phoneNumber = '';
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _smsCode = TextEditingController();
 
   @override
   void initState() {
+    _getUserData();
     super.initState();
+  }
+
+  Future<void> _getUserData() async {
+    final user = await authService.currentUser;
+
+    if (user != null) {
+      setState(() {
+        _userId = user.uid;
+      });
+      firestoreService.usersRef.doc(user.uid).snapshots().listen((event) {
+        final data = event.data();
+        if (data != null) {
+          _name = data['name'] ?? '';
+          _phoneNumber = data['phoneNumber'] ?? '';
+          _nameController.text = data['name'] ?? '';
+          _phoneController.text = data['phoneNumber'] ?? '';
+        }
+      });
+    }
   }
 
   @override
@@ -33,6 +58,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = await authService.currentUser;
 
     if (user != null) {
+      await firestoreService.usersRef.doc(user.uid).set({
+        'name': _nameController.text,
+        'phoneNumber': _phoneController.text,
+      });
       await user.updateDisplayName(_nameController.text);
       await authService.auth.verifyPhoneNumber(
         phoneNumber: _phoneController.text,
@@ -85,6 +114,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           const SizedBox(height: 20),
+          const Row(
+            children: [
+              ProfilePicture(),
+            ],
+          ),
+          const SizedBox(height: 20),
           FutureBuilder<User?>(
               future: authService.currentUser,
               builder: (context, snapshot) {
@@ -98,13 +133,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildText(
                         'Name: ',
-                        user.displayName ?? 'Not set',
+                        _name,
                       ),
                       const SizedBox(height: 10),
-                      _buildText(
-                        'Phone number: ',
-                        user.phoneNumber ?? 'Not set',
-                      ),
+                      _buildText('Phone number: ', _phoneNumber),
                       const SizedBox(height: 10),
                       _buildText(
                         'Email: ',
